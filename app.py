@@ -5,6 +5,8 @@ import requests
 import os
 import sqlite3
 
+app.logger.info(f"tokens.db exists: {os.path.exists('tokens.db')}")
+
 app = Flask(__name__)
 CORS(app, origins=["http://127.0.0.1:5500", "https://shaharyemini.github.io/homePage/"])
 
@@ -42,6 +44,7 @@ init_db()
 
 @app.route("/auth", methods=["POST"])
 def auth():
+    app.logger.info(f"tokens.db exists: {os.path.exists('tokens.db')}")
     code = request.json.get("code")
     if not code:
         return jsonify({"error": "Missing authorization code"}), 400
