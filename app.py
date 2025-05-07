@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+
 import requests
 import os
 
 app = Flask(__name__)
+CORS(app, origins=["http://127.0.0.1:5500", "https://shaharyemini.github.io/homePage/"])
 
 # === CONFIGURATION ===
 CLIENT_ID = os.environ.get("CLIENT_ID")
@@ -66,6 +69,7 @@ def refresh():
         "access_token": token_data.get("access_token"),
         "expires_in": token_data.get("expires_in")
     })
+
 
 # === ENTRY POINT ===
 if __name__ == "__main__":
