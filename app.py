@@ -40,7 +40,8 @@ def auth():
         return jsonify({"error": "Failed to exchange code", "details": r.json()}), 400
 
     token_data = r.json()
-    TOKENS["refresh_token"] = token_data.get("refresh_token")
+    with open("refresh_token.txt", "w") as f:
+        f.write(token_data.get("refresh_token"))
     return jsonify({
         "access_token": token_data.get("access_token"),
         "expires_in": token_data.get("expires_in")
@@ -49,8 +50,10 @@ def auth():
 
 @app.route("/refresh", methods=["GET"])
 def refresh():
-    refresh_token = TOKENS.get("refresh_token")
-    if not refresh_token:
+    try:
+        with open("refresh_token.txt", "r") as f:
+            refresh_token = f.read().strip()
+    except FileNotFoundError:
         return jsonify({"error": "No refresh token stored"}), 400
 
     data = {
