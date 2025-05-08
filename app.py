@@ -33,7 +33,7 @@ def auth():
         "redirect_uri": REDIRECT_URI,
         "grant_type": "authorization_code"
     }
-    app.logger.info(f"Token exchange data: {data}")
+    app.logger.info(f"Sending token exchange request with redirect_uri: {REDIRECT_URI}")
     r = requests.post(TOKEN_URL, data=data)
     if r.status_code != 200:
         details = r.json() if r.content else r.text
