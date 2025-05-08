@@ -4,7 +4,7 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app, origins=["http://127.0.0.1:5500", "https://shaharyemini.github.io/homePage/"])
+CORS(app, origins=["http://127.0.0.1:5500", "https://shaharyemini.github.io", "https://shaharyemini.github.io/homePage/"], supports_credentials=True)
 
 # === CONFIGURATION ===
 CLIENT_ID = os.environ.get("CLIENT_ID")
@@ -19,8 +19,10 @@ def store_refresh_token(user_id, token):
     app.logger.info(f"Stored refresh token for user {user_id}")
 
 # === ROUTES ===
-@app.route("/auth", methods=["POST"])
+@app.route("/auth", methods=["POST", "OPTIONS"])
 def auth():
+    if request.method == "OPTIONS":
+        return "", 200  # Handle preflight request
     code = request.json.get("code")
     user_id = request.json.get("user_id", "default_user")
     app.logger.info(f"Received code: {code}, user_id: {user_id}")
