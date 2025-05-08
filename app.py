@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
 import requests
 import os
 
@@ -11,11 +10,15 @@ CORS(app, origins=["http://127.0.0.1:5500", "https://shaharyemini.github.io/home
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 REDIRECT_URI = os.environ.get("REDIRECT_URI")
-
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 
-# === ROUTES ===
+# === TOKEN STORAGE ===
+def store_refresh_token(user_id, token):
+    with open("refresh_token.txt", "w") as f:
+        f.write(token)
+    app.logger.info(f"Stored refresh token for user {user_id}")
 
+# === ROUTES ===
 @app.route("/auth", methods=["POST"])
 def auth():
     code = request.json.get("code")
@@ -33,12 +36,9 @@ def auth():
     app.logger.info(f"Token exchange data: {data}")
     r = requests.post(TOKEN_URL, data=data)
     if r.status_code != 200:
-        try:
-            details = r.json()
-        except ValueError:
-            details = r.text
+        details = r.json() if r.content else r.text
         app.logger.error(f"Token exchange failed: status={r.status_code}, details={details}")
-        return jsonify({"error": "Failed to exchange code", "details": details}), 400
+        return jsonify({"error": "Failed to exchange code", "details": details}), r.status_code
     token_data = r.json()
     if token_data.get("refresh_token"):
         store_refresh_token(user_id, token_data.get("refresh_token"))
@@ -47,7 +47,6 @@ def auth():
         "expires_in": token_data.get("expires_in")
     })
 
-
 @app.route("/refresh", methods=["GET"])
 def refresh():
     try:
@@ -55,24 +54,22 @@ def refresh():
             refresh_token = f.read().strip()
     except FileNotFoundError:
         return jsonify({"error": "No refresh token stored"}), 400
-
     data = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
         "refresh_token": refresh_token,
         "grant_type": "refresh_token"
     }
-
     r = requests.post(TOKEN_URL, data=data)
     if r.status_code != 200:
-        return jsonify({"error": "Failed to refresh token", "details": r.json()}), 400
-
+        details = r.json() if r.content else r.text
+        app.logger.error(f"Refresh token failed: status={r.status_code}, details={details}")
+        return jsonify({"error": "Failed to refresh token", "details": details}), r.status_code
     token_data = r.json()
     return jsonify({
         "access_token": token_data.get("access_token"),
         "expires_in": token_data.get("expires_in")
     })
-
 
 # === ENTRY POINT ===
 if __name__ == "__main__":
